@@ -7,6 +7,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.slf4j.Logger;
@@ -37,10 +38,10 @@ import br.unibh.sdm.persistencia.pacienteRepository;
 public class PacienteTests {
 
     private static Logger LOGGER = LoggerFactory.getLogger(PacienteTests.class);
-    private final SimpleDateFormat df = new SimpleDateFormat("dd/MM/yyyy");
+    private SimpleDateFormat df = new SimpleDateFormat("dd/mm/yyyy");
 
     @Configuration
-	@EnableDynamoDBRepositories(basePackageClasses = pacienteRepository.class)
+	@EnableDynamoDBRepositories(basePackageClasses = { pacienteRepository.class })
 	public static class DynamoDBConfig {
 
 		@Value("${amazon.aws.accesskey}")
@@ -64,14 +65,30 @@ public class PacienteTests {
 					.withRegion(Regions.US_EAST_1).build();
 		}
 	}
-
-
-
-    @Autowired
-    private pacienteRepository repository;
+    
+	@Autowired
+	private pacienteRepository repository;
 
     @Test
-    public void teste2Exclusao() throws ParseException{
+    public void teste1Criacao() throws ParseException {
+        LOGGER.info("Criando objetos...");
+        Paciente p1 = new Paciente("João Silva", "joao.silva@example.com", "123456789", "senha123", df.format(new java.util.Date()), df.format(new java.util.Date()));
+        Paciente p2 = new Paciente("Maria Oliveira", "maria.oliveira@example.com", "987654321", "senha456", df.format(new java.util.Date()), df.format(new java.util.Date()));
+        repository.save(p1);
+        repository.save(p2);
+        Iterable<Paciente> lista = repository.findAll();
+      	assertTrue(lista.iterator().hasNext());
+        for (Paciente pac : lista) {
+            LOGGER.info(pac.toString());
+        }
+        LOGGER.info("Pesquisando um objeto");
+        List<Paciente> result = repository.findByNome("João Silva");
+        assertEquals(1, result.size());
+        LOGGER.info("Encontrado: {}", result.size());
+    }
+
+    @Test
+    public void teste2Exclusao() throws ParseException {
         LOGGER.info("Excluindo objetos...");
         List<Paciente> result = repository.findByNome("João Silva");
         for (Paciente pac : result) {
@@ -82,8 +99,4 @@ public class PacienteTests {
         assertEquals(0, result.size());
         LOGGER.info("Exclusão feita com sucesso");
     }
-
-
-   
-
 }
